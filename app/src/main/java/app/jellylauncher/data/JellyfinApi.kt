@@ -78,7 +78,7 @@ class JellyfinApi(private val prefs: Prefs) {
         val url = "${prefs.serverUrl}/Users/$userId/Items/Resume".toHttpUrl().newBuilder()
             .addQueryParameter("Limit", "20")
             .addQueryParameter("MediaTypes", "Video")
-            .addQueryParameter("Fields", "Overview")
+            .addQueryParameter("Fields", "Overview,Genres")
             .addQueryParameter("EnableUserData", "true")
             .addQueryParameter("EnableImageTypes", "Primary,Backdrop,Thumb")
             .build()
@@ -103,15 +103,18 @@ class JellyfinApi(private val prefs: Prefs) {
     fun toCard(item: JfItem): ResumeCard {
         val isEpisode = item.type == "Episode"
         val title = if (isEpisode) item.seriesName ?: item.name else item.name
+        val episodeLabel =
+            if (item.seasonNumber != null && item.episodeNumber != null) "S${item.seasonNumber}:E${item.episodeNumber}" else null
+        val genres = item.genres.take(3).joinToString(" · ")
         val subtitle = if (isEpisode) {
-            buildString {
-                if (item.seasonNumber != null && item.episodeNumber != null) {
-                    append("S${item.seasonNumber}:E${item.episodeNumber} · ")
-                }
-                append(item.name)
-            }
+            listOfNotNull(episodeLabel, item.name).joinToString(" · ")
         } else {
-            item.year?.toString().orEmpty()
+            genres.ifEmpty { item.year?.toString().orEmpty() }
+        }
+        val kicker = if (isEpisode) {
+            listOfNotNull("EPISODE", episodeLabel).joinToString(" · ")
+        } else {
+            listOfNotNull("MOVIE", item.year?.toString()).joinToString(" · ")
         }
 
         val total = item.runTimeTicks ?: 0L
@@ -127,7 +130,21 @@ class JellyfinApi(private val prefs: Prefs) {
             remaining = remainingText(total - position),
             cardImage = cardImage(item),
             heroImage = heroImage(item),
+            poster = poster(item),
+            kicker = kicker,
+            positionMs = position / 10_000,
         )
+    }
+
+    /** Tall poster: the series poster for episodes, the item's own poster for movies. */
+    private fun poster(item: JfItem): String? {
+        val seriesId = item.seriesId
+        val seriesTag = item.seriesPrimaryImageTag
+        if (item.type == "Episode" && seriesId != null && seriesTag != null) {
+            return image(seriesId, "Primary", seriesTag, 400)
+        }
+        item.imageTags["Primary"]?.let { return image(item.id, "Primary", it, 400) }
+        return null
     }
 
     private fun remainingText(ticksLeft: Long): String {
