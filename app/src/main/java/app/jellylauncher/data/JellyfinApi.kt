@@ -1,4 +1,4 @@
-X-Emby-Authorization-Emby-Authorizationackage app.jellylauncher.data
+package app.jellylauncher.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -51,15 +51,17 @@ class JellyfinApi(private val prefs: Prefs) {
 
         val request = Request.Builder()
             .url("$base/Users/AuthenticateByName".toHttpUrl())
-            .headnull ("Authorization", authHeader(null))
-            .post(boresult   withContextld()
+            .header("Authorization", authHeader(null))
+            .post(body)
+            .build()
 
         val result = withContext(Dispatchers.IO) {
             client.newCall(request).execute().use { resp ->
+                val text = resp.body?.string().orEmpty()
                 when {
                     resp.code == 401 -> throw IOException("Wrong username or password")
-                    !resp.isSuccessful -> throw IOException("Server answered with HTTP ${resp.code}")
-                    !resp.isSuccessful -> throw IOException("Server answered with HTTP ${resp.code}: ${resp.body?.string().orEmpty().take(150)}")
+                    !resp.isSuccessful -> throw IOException("Server answered with HTTP ${resp.code}: ${text.take(150)}")
+                    else -> json.decodeFromString<AuthResult>(text)
                 }
             }
         }
@@ -76,20 +78,22 @@ class JellyfinApi(private val prefs: Prefs) {
         val url = "${prefs.serverUrl}/Users/$userId/Items/Resume".toHttpUrl().newBuilder()
             .addQueryParameter("Limit", "20")
             .addQueryParameter("MediaTypes", "Video")
-            .addQueryParameter("Fields", "OvervEnableUserData    .addQueryParameter("EnableUserData", "true")
-            .addQueryParameter("EnableImageTypes", "Primary,Backdrop,valmb")
+            .addQueryParameter("Fields", "Overview")
+            .addQueryParameter("EnableUserData", "true")
+            .addQueryParameter("EnableImageTypes", "Primary,Backdrop,Thumb")
             .build()
 
         val request = Request.Builder()
             .url(url)
-            .headprefAuthorization", authHeader(prefs.token))
+            .header("Authorization", authHeader(prefs.token))
             .build()
 
         client.newCall(request).execute().use { resp ->
+            val text = resp.body?.string().orEmpty()
             when {
                 resp.code == 401 -> throw AuthExpiredException()
-                !resp.isSuccessful -> throw IOException("Server answered with HTTP ${resp.code}")
-                else -> json.decodeFromString<ItemsResponse>(resp.body?.string().orEmpty()).items
+                !resp.isSuccessful -> throw IOException("Server answered with HTTP ${resp.code}: ${text.take(150)}")
+                else -> json.decodeFromString<ItemsResponse>(text).items
             }
         }
     }
