@@ -3,103 +3,88 @@ package app.jellylauncher.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 
 @Composable
-fun LoginScreen(
-    initialServer: String,
-    error: String?,
-    busy: Boolean,
-    canCancel: Boolean,
-    onSubmit: (server: String, username: String, password: String) -> Unit,
-    onCancel: () -> Unit,
+fun SetupScreen(
+    overrideOn: Boolean,
+    onAccessibility: () -> Unit,
+    onAppInfo: () -> Unit,
+    onHomeSettings: () -> Unit,
+    onDone: () -> Unit,
 ) {
-    var server by remember { mutableStateOf(initialServer) }
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    BackHandler(onBack = onDone)
+    val first = remember { FocusRequester() }
+    LaunchedEffect(Unit) { delay(150); runCatching { first.requestFocus() } }
 
-    if (canCancel) BackHandler(onBack = onCancel)
-
-    val canSubmit = !busy && server.isNotBlank() && username.isNotBlank()
-    val submit = { if (canSubmit) onSubmit(server, username, password) }
-
-    Box(Modifier.fillMaxSize().background(Bg), contentAlignment = Alignment.Center) {
-        Column(Modifier.width(520.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Connect to Jellyfin", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+    Row(Modifier.fillMaxSize().background(Bg).padding(horizontal = 56.dp, vertical = 28.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+            JellyMark(Modifier.size(64.dp))
+            Spacer(Modifier.height(16.dp))
+            Text("Make this your home screen", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(10.dp))
             Text(
-                "Enter your server address and the account to use. Only a sign-in token is stored on this TV, not your password.",
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 13.sp,
+                "Google TV won't let apps replace Home directly, so Jelly Launcher watches for the stock " +
+                    "home screen and jumps in front of it. Do these steps once:",
+                color = Color.White.copy(alpha = 0.75f), fontSize = 14.sp,
             )
+            Spacer(Modifier.height(14.dp))
+            Text("1. If switching on step 2 is greyed out, open App info, press the ⋮ menu and choose \"Allow restricted settings\".", color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
             Spacer(Modifier.height(6.dp))
-
-            OutlinedTextField(
-                value = server,
-                onValueChange = { server = it },
-                label = { Text("Server address (e.g. 192.168.1.20:8096)") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
+            Text("2. Open Accessibility and switch on \"Jelly Launcher home button\".", color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
+            Spacer(Modifier.height(6.dp))
+            Text("3. Press Home on your remote. You should land here.", color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
+            Spacer(Modifier.height(16.dp))
+            Text(
+                if (overrideOn) "Status: ON — Home button is taken over" else "Status: OFF — Home still opens the stock screen",
+                color = if (overrideOn) Color(0xFF4DE3C4) else Color(0xFFFFC145),
+                fontSize = 14.sp, fontWeight = FontWeight.Bold,
             )
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Username") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { submit() }),
-                modifier = Modifier.fillMaxWidth(),
-            )
+        }
+        Spacer(Modifier.width(40.dp))
+        Column(Modifier.width(300.dp), verticalArrangement = Arrangement.Center) {
+            SetupButton("Open App info (restricted settings)", onAppInfo, first)
+            Spacer(Modifier.height(12.dp))
+            SetupButton("Open Accessibility settings", onAccessibility)
+            Spacer(Modifier.height(12.dp))
+            SetupButton("Open Home app settings", onHomeSettings)
+            Spacer(Modifier.height(12.dp))
+            SetupButton("Done", onDone)
+        }
+    }
+}
 
-            if (error != null) {
-                Text(error, color = Color(0xFFFF6B6B), fontSize = 14.sp)
-            }
-
-            Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = { submit() }, enabled = canSubmit) {
-                    Text(if (busy) "Connecting…" else "Connect")
-                }
-                if (canCancel) {
-                    OutlinedButton(onClick = onCancel) { Text("Cancel") }
-                }
-            }
+@Composable
+private fun SetupButton(label: String, onClick: () -> Unit, focusRequester: FocusRequester? = null) {
+    FocusCard(
+        modifier = Modifier.fillMaxWidth().height(48.dp),
+        focusRequester = focusRequester,
+        shape = RoundedCornerShape(12.dp),
+        onClick = onClick,
+    ) {
+        Column(Modifier.fillMaxSize().background(CardBg), verticalArrangement = Arrangement.Center) {
+            Text(label, color = Color.White, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 16.dp))
         }
     }
 }
