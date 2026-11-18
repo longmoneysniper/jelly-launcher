@@ -29,10 +29,13 @@ data class JfItem(
     @SerialName("Name") val name: String = "",
     @SerialName("Type") val type: String = "",
     @SerialName("SeriesName") val seriesName: String? = null,
+    @SerialName("SeriesId") val seriesId: String? = null,
+    @SerialName("SeriesPrimaryImageTag") val seriesPrimaryImageTag: String? = null,
     @SerialName("ParentIndexNumber") val seasonNumber: Int? = null,
     @SerialName("IndexNumber") val episodeNumber: Int? = null,
     @SerialName("ProductionYear") val year: Int? = null,
     @SerialName("Overview") val overview: String? = null,
+    @SerialName("Genres") val genres: List<String> = emptyList(),
     @SerialName("RunTimeTicks") val runTimeTicks: Long? = null,
     @SerialName("ImageTags") val imageTags: Map<String, String> = emptyMap(),
     @SerialName("BackdropImageTags") val backdropImageTags: List<String> = emptyList(),
@@ -57,11 +60,14 @@ data class ResumeCard(
     val remaining: String,
     val cardImage: String?,
     val heroImage: String?,
+    val poster: String? = null,
+    val kicker: String = "",
+    val positionMs: Long = 0,
 )
 
 data class LaunchableApp(
     val label: String,
     val packageName: String,
-    val image: ImageBitmap,
-    val isBanner: Boolean,
+    val icon: ImageBitmap,
+    val banner: ImageBitmap?,
 )
