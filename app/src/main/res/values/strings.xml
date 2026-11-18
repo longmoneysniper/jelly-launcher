@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Jelly Launcher</string>
+    <string name="app_name">Encore</string>
+    <string name="override_description">Brings Encore to the front when you press Home, so it works as your TV home screen. It does not read or store anything on screen.</string>
 </resources>
