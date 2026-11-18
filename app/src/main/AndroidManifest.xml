@@ -54,7 +54,7 @@
         <service
             android:name=".HomeOverrideService"
             android:exported="true"
-            android:label="Jelly Launcher home button"
+            android:label="Encore home button"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
