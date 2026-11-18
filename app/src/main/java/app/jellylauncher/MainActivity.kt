@@ -1,7 +1,6 @@
 package app.jellylauncher
 
 import android.content.ActivityNotFoundException
-import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -11,12 +10,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import app.jellylauncher.data.JELLYFIN_PACKAGE
+import app.jellylauncher.data.WHOLPHIN_PACKAGE
 import app.jellylauncher.data.LaunchableApp
 import app.jellylauncher.data.ResumeCard
+import app.jellylauncher.ui.AllAppsScreen
 import app.jellylauncher.ui.HomeScreen
 import app.jellylauncher.ui.JellyTheme
 import app.jellylauncher.ui.LoginScreen
+import app.jellylauncher.ui.SetupScreen
+import android.provider.Settings
 
 class MainActivity : ComponentActivity() {
 
@@ -38,12 +40,28 @@ class MainActivity : ComponentActivity() {
                         onSubmit = viewModel::login,
                         onCancel = viewModel::closeSettings,
                     )
+                } else if (state.showSetup) {
+                    SetupScreen(
+                        overrideOn = state.overrideOn,
+                        onAccessibility = { openSettingsScreen(Settings.ACTION_ACCESSIBILITY_SETTINGS) },
+                        onAppInfo = { openSettingsScreen(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, true) },
+                        onHomeSettings = { openSettingsScreen(Settings.ACTION_HOME_SETTINGS) },
+                        onDone = viewModel::closeSetup,
+                    )
+                } else if (state.showAllApps) {
+                    AllAppsScreen(
+                        apps = state.apps,
+                        onLaunch = ::launchApp,
+                        onClose = viewModel::closeAllApps,
+                    )
                 } else {
                     HomeScreen(
                         state = state,
-                        onPlay = ::openInJellyfin,
+                        onPlay = ::openInWholphin,
                         onLaunchApp = ::launchApp,
+                        onAllApps = viewModel::openAllApps,
                         onSettings = viewModel::openSettings,
+                        onSetup = viewModel::openSetup,
                         onRetry = viewModel::refresh,
                     )
                 }
@@ -55,39 +73,50 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refresh()
+        viewModel.checkOverride()
+    }
+
+    // Pressing Home while the launcher is already open brings you back to the main screen.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        viewModel.closeAllApps()
     }
 
     /**
-     * Opens the item's screen in the official Jellyfin Android TV app.
-     *
-     * Uses the same intent that home-automation setups report working with that app: VIEW with the
-     * item id as data, aimed at StartupActivity. It lands on the item's details screen (press Play
-     * there); it does not autoplay. If that fails, the Jellyfin app is simply opened.
+     * Plays the item in Wholphin. Uses Wholphin's documented link: wholphin://play?itemId=<id>&position=<ms>
+     * (position resumes where you left off). If that fails, Wholphin is simply opened.
      */
-    private fun openInJellyfin(card: ResumeCard) {
+    private fun openInWholphin(card: ResumeCard) {
         val direct = Intent(Intent.ACTION_VIEW).apply {
-            addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
-            component = ComponentName(JELLYFIN_PACKAGE, "$JELLYFIN_PACKAGE.ui.startup.StartupActivity")
-            data = Uri.parse(card.id)
-            putExtra("source", "30")
+            data = Uri.parse("wholphin://play?itemId=${card.id}&position=${card.positionMs}")
+            setPackage(WHOLPHIN_PACKAGE)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         try {
             startActivity(direct)
             return
         } catch (e: ActivityNotFoundException) {
-            // Jellyfin missing or its activity was renamed; fall through to a plain launch.
         } catch (e: SecurityException) {
         }
 
-        val fallback = packageManager.getLeanbackLaunchIntentForPackage(JELLYFIN_PACKAGE)
-            ?: packageManager.getLaunchIntentForPackage(JELLYFIN_PACKAGE)
+        val fallback = packageManager.getLeanbackLaunchIntentForPackage(WHOLPHIN_PACKAGE)
+            ?: packageManager.getLaunchIntentForPackage(WHOLPHIN_PACKAGE)
         if (fallback == null) {
-            Toast.makeText(this, "Install the Jellyfin app for Android TV to open this", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Install Wholphin to play this", Toast.LENGTH_LONG).show()
             return
         }
         fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(fallback)
+    }
+
+    private fun openSettingsScreen(action: String, withPackage: Boolean = false) {
+        val i = Intent(action).apply {
+            if (withPackage) data = Uri.parse("package:$packageName")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try { startActivity(i) } catch (e: Exception) {
+            Toast.makeText(this, "This TV doesn't have that settings page", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun launchApp(app: LaunchableApp) {
@@ -97,6 +126,7 @@ class MainActivity : ComponentActivity() {
             Toast.makeText(this, "Can't open ${app.label}", Toast.LENGTH_SHORT).show()
             return
         }
+        viewModel.closeAllApps()
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
     }
