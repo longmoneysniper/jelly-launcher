@@ -8,8 +8,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 const val JELLYFIN_PACKAGE = "org.jellyfin.androidtv"
+const val WHOLPHIN_PACKAGE = "com.github.damontecres.wholphin"
 
-/** Lists the apps installed on the TV so the launcher can show them in the Apps row. */
+/** Lists the apps installed on the TV so the launcher can show them in the dock and the All apps screen. */
 class AppsRepository(private val context: Context) {
 
     private class Entry(val app: LaunchableApp, val leanback: Boolean)
@@ -31,20 +32,25 @@ class AppsRepository(private val context: Context) {
                 val pkg = info.activityInfo.packageName
                 if (!seen.add(pkg)) continue
 
-                val banner = info.activityInfo.loadBanner(pm)
-                    ?: info.activityInfo.applicationInfo.loadBanner(pm)
-                val image = try {
-                    if (banner != null) banner.toBitmap(320, 180) else info.loadIcon(pm).toBitmap(160, 160)
+                val icon = try {
+                    info.loadIcon(pm).toBitmap(128, 128)
                 } catch (e: Exception) {
                     continue
+                }
+                val banner = try {
+                    val drawable = info.activityInfo.loadBanner(pm)
+                        ?: info.activityInfo.applicationInfo.loadBanner(pm)
+                    drawable?.toBitmap(320, 180)
+                } catch (e: Exception) {
+                    null
                 }
 
                 entries += Entry(
                     app = LaunchableApp(
                         label = info.loadLabel(pm).toString(),
                         packageName = pkg,
-                        image = image.asImageBitmap(),
-                        isBanner = banner != null,
+                        icon = icon.asImageBitmap(),
+                        banner = banner?.asImageBitmap(),
                     ),
                     leanback = isLeanback,
                 )
@@ -55,6 +61,7 @@ class AppsRepository(private val context: Context) {
         entries
             .sortedWith(
                 compareBy<Entry>(
+                    { it.app.packageName != WHOLPHIN_PACKAGE },
                     { it.app.packageName != JELLYFIN_PACKAGE },
                     { !it.leanback },
                     { it.app.label.lowercase() },
