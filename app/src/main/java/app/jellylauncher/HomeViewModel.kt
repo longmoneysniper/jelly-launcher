@@ -21,6 +21,9 @@ data class HomeUiState(
     val loading: Boolean = true,
     val showLogin: Boolean = false,
     val loggingIn: Boolean = false,
+    val showAllApps: Boolean = false,
+    val showSetup: Boolean = false,
+    val overrideOn: Boolean = false,
     val loginError: String? = null,
     val cards: List<ResumeCard> = emptyList(),
     val apps: List<LaunchableApp> = emptyList(),
@@ -44,6 +47,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         )
     )
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
+
+    private val setupPrefs = application.getSharedPreferences("setup", 0)
+
+    init {
+        if (!setupPrefs.getBoolean("seen", false)) _state.update { it.copy(showSetup = true, overrideOn = isOverrideOn()) }
+    }
 
     private var refreshJob: Job? = null
 
@@ -131,6 +140,27 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun openSettings() = _state.update { it.copy(showLogin = true, loginError = null) }
+
+    fun openSetup() = _state.update { it.copy(showSetup = true, overrideOn = isOverrideOn()) }
+
+    fun closeSetup() {
+        setupPrefs.edit().putBoolean("seen", true).apply()
+        _state.update { it.copy(showSetup = false) }
+    }
+
+    fun checkOverride() = _state.update { it.copy(overrideOn = isOverrideOn()) }
+
+    private fun isOverrideOn(): Boolean {
+        val app = getApplication<Application>()
+        val enabled = android.provider.Settings.Secure.getString(
+            app.contentResolver, android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ).orEmpty()
+        return enabled.contains(app.packageName + "/", ignoreCase = true) && enabled.contains("HomeOverrideService")
+    }
+
+    fun openAllApps() = _state.update { it.copy(showAllApps = true) }
+
+    fun closeAllApps() = _state.update { it.copy(showAllApps = false) }
 
     fun closeSettings() {
         if (prefs.isLoggedIn) _state.update { it.copy(showLogin = false, loginError = null) }
