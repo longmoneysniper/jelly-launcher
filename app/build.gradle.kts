@@ -10,7 +10,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "app.jellylauncher"
+        applicationId = "app.jellylauncher.Tv"
         minSdk = 23
         targetSdk = 35
         versionCode = 1
