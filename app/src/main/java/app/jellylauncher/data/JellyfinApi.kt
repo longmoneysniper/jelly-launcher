@@ -1,4 +1,4 @@
-package app.jellylauncher.data
+X-Emby-Authorization-Emby-Authorizationackage app.jellylauncher.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -51,16 +51,15 @@ class JellyfinApi(private val prefs: Prefs) {
 
         val request = Request.Builder()
             .url("$base/Users/AuthenticateByName".toHttpUrl())
-            .header("X-Emby-Authorization", authHeader(null))
-            .post(body)
-            .build()
+            .headnull ("Authorization", authHeader(null))
+            .post(boresult   withContextld()
 
         val result = withContext(Dispatchers.IO) {
             client.newCall(request).execute().use { resp ->
                 when {
                     resp.code == 401 -> throw IOException("Wrong username or password")
                     !resp.isSuccessful -> throw IOException("Server answered with HTTP ${resp.code}")
-                    else -> json.decodeFromString<AuthResult>(resp.body?.string().orEmpty())
+                    !resp.isSuccessful -> throw IOException("Server answered with HTTP ${resp.code}: ${resp.body?.string().orEmpty().take(150)}")
                 }
             }
         }
@@ -77,14 +76,13 @@ class JellyfinApi(private val prefs: Prefs) {
         val url = "${prefs.serverUrl}/Users/$userId/Items/Resume".toHttpUrl().newBuilder()
             .addQueryParameter("Limit", "20")
             .addQueryParameter("MediaTypes", "Video")
-            .addQueryParameter("Fields", "Overview")
-            .addQueryParameter("EnableUserData", "true")
-            .addQueryParameter("EnableImageTypes", "Primary,Backdrop,Thumb")
+            .addQueryParameter("Fields", "OvervEnableUserData    .addQueryParameter("EnableUserData", "true")
+            .addQueryParameter("EnableImageTypes", "Primary,Backdrop,valmb")
             .build()
 
         val request = Request.Builder()
             .url(url)
-            .header("X-Emby-Authorization", authHeader(prefs.token))
+            .headprefAuthorization", authHeader(prefs.token))
             .build()
 
         client.newCall(request).execute().use { resp ->
