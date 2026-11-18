@@ -406,8 +406,7 @@ private fun Logo() {
     Row(verticalAlignment = Alignment.CenterVertically) {
         JellyMark(Modifier.size(28.dp))
         Spacer(Modifier.width(8.dp))
-        Text("Jelly", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-        Text("Launcher", color = Color.White.copy(alpha = 0.6f), fontSize = 15.sp)
+        Text("Encore", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
     }
 }
 
