@@ -45,14 +45,14 @@ fun SetupScreen(
             Text("Make this your home screen", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(10.dp))
             Text(
-                "Google TV won't let apps replace Home directly, so Jelly Launcher watches for the stock " +
+                "Google TV won't let apps replace Home directly, so Encore watches for the stock " +
                     "home screen and jumps in front of it. Do these steps once:",
                 color = Color.White.copy(alpha = 0.75f), fontSize = 14.sp,
             )
             Spacer(Modifier.height(14.dp))
             Text("1. If switching on step 2 is greyed out, open App info, press the ⋮ menu and choose \"Allow restricted settings\".", color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
             Spacer(Modifier.height(6.dp))
-            Text("2. Open Accessibility and switch on \"Jelly Launcher home button\".", color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
+            Text("2. Open Accessibility and switch on \"Encore home button\".", color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
             Spacer(Modifier.height(6.dp))
             Text("3. Press Home on your remote. You should land here.", color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp)
             Spacer(Modifier.height(16.dp))
